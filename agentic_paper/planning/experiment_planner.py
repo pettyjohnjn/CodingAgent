@@ -1,30 +1,22 @@
 from __future__ import annotations
 
 import json
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-from openai import OpenAI
-from ..utils.inference_auth_token import get_access_token
-
-
-def _get_client() -> OpenAI:
-    return OpenAI(
-        api_key=get_access_token(),
-        base_url="https://inference-api.alcf.anl.gov/resource_server/sophia/vllm/v1",
-    )
+from ..utils.llm_client import call_llm
 
 
-def _extract_json_object(text: str) -> Dict[str, Any]:
+def _safe_parse_json_object(text: str) -> Dict[str, Any]:
     """
-    Try to parse a JSON object from raw LLM text.
+    Try to parse a JSON object from an LLM response.
 
-    - First try direct json.loads.
-    - If that fails, look for the first '{' ... last '}' span and try json.loads on it.
-    - On failure, return a minimal default: {"experiments": []}.
+    - Prefer direct json.loads.
+    - Fallback: use the substring between the first '{' and the last '}'.
+    - On failure, return a minimal default plan with no experiments.
     """
     text = text.strip()
 
-    # Direct parse
+    # 1) Direct parse
     try:
         obj = json.loads(text)
         if isinstance(obj, dict):
@@ -32,24 +24,7 @@ def _extract_json_object(text: str) -> Dict[str, Any]:
     except Exception:
         pass
 
-    # Strip markdown code fences if present
-    if text.startswith("```"):
-        # remove the first line (``` or ```json) and the last line (```)
-        lines = text.splitlines()
-        if len(lines) >= 2:
-            if lines[0].startswith("```"):
-                lines = lines[1:]
-            if lines and lines[-1].startswith("```"):
-                lines = lines[:-1]
-            inner = "\n".join(lines).strip()
-            try:
-                obj = json.loads(inner)
-                if isinstance(obj, dict):
-                    return obj
-            except Exception:
-                text = inner  # fall through to braces search with stripped text
-
-    # Heuristic: find first '{' and last '}', parse substring
+    # 2) Try to extract a JSON object substring
     start = text.find("{")
     end = text.rfind("}")
     if start != -1 and end != -1 and end > start:
@@ -61,125 +36,151 @@ def _extract_json_object(text: str) -> Dict[str, Any]:
         except Exception:
             pass
 
-    # Fallback
+    # 3) Fallback
     return {"experiments": []}
 
 
 def plan_experiments(
     question: str,
     model: Optional[str] = None,
-    max_experiments: int = 2,
+    max_experiments: int = 3,
 ) -> Dict[str, Any]:
     """
     Ask an LLM to propose a small set of experiments for the given question.
 
-    Args:
-        question: Natural-language problem statement.
-        model:    Model name for the planner; if None, use a default.
-        max_experiments: Maximum number of experiments to keep.
+    Simplified schema (NO metrics block, to reduce brittleness):
 
-    Returns:
+    {
+      "experiments": [
         {
-          "experiments": [
-             {
-               "id": "exp1",
-               "name": "...",
-               "goal": "...",
-               "description": "...",
-               "outputs": {
-                 "plots": [
-                   {"filename": "foo.png", "description": "..."},
-                   ...
-                 ],
-                 "metrics": [
-                   {"name": "final_error", "description": "..."},
-                   ...
-                 ]
-               }
-             },
-             ...
-          ]
-        }
+          "id": "exp1",
+          "name": "<short descriptive name>",
+          "goal": "<one-sentence goal>",
+          "description": "<2–5 sentence description>",
+          "outputs": {
+            "plots": [
+              {
+                "filename": "displacement_vs_time.png",
+                "description": "Displacement as a function of time."
+              },
+              ...
+            ]
+          }
+        },
+        ...
+      ]
+    }
+
+    The filenames are only used to enforce that the code calls plt.savefig(...)
+    with those exact strings; we do NOT require any particular metric variable
+    names in the code anymore.
     """
     if model is None:
-        model = "openai/gpt-oss-120b"
+        # Use whatever default planner model you like; you can override via config
+        model = "openai/gpt-4o-mini"
 
-    system_prompt = f"""
-You are an experiment planner for numerical and scientific computing projects.
+    # Describe the target JSON format in plain text (no f-string interpolation
+    # inside the JSON example, to avoid format-specifier issues).
+    schema_description = (
+        "You must respond with a SINGLE JSON object of the form:\n"
+        "{\n"
+        '  "experiments": [\n'
+        '    {\n'
+        '      "id": "exp1",\n'
+        '      "name": "Short experiment name",\n'
+        '      "goal": "One-sentence goal of the experiment.",\n'
+        '      "description": "2-5 sentences describing what will be done.",\n'
+        '      "outputs": {\n'
+        '        "plots": [\n'
+        '          {\n'
+        '            "filename": "some_plot_name.png",\n'
+        '            "description": "What this plot shows."\n'
+        '          }\n'
+        '        ]\n'
+        '      }\n'
+        '    }\n'
+        '  ]\n'
+        "}\n"
+    )
 
-Given a research question, you must propose a SMALL set of well-structured
-experiments (at most {max_experiments}) that together answer the question.
-
-Each experiment should have:
-- a short ID (like "exp1", "exp2", ...),
-- a concise name,
-- a one-sentence goal,
-- a 1–3 sentence description,
-- a list of output plots with exact filenames,
-- a list of quantitative metrics with exact names.
-
-You MUST respond with a SINGLE JSON object of the form:
-
-{{
-  "experiments": [
-    {{
-      "id": "exp1",
-      "name": "Short experiment title",
-      "goal": "One-sentence goal of the experiment.",
-      "description": "2–3 sentences describing what this experiment does.",
-      "outputs": {{
-        "plots": [
-          {{
-            "filename": "example_plot.png",
-            "description": "What this plot shows."
-          }}
-        ],
-        "metrics": [
-          {{
-            "name": "final_approx",
-            "description": "What this metric measures."
-          }}
-        ]
-      }}
-    }}
-  ]
-}}
-
-Constraints:
-- The top-level key MUST be "experiments".
-- You MUST provide between 1 and {max_experiments} experiments.
-- Do NOT include any comments, prose, or markdown outside the JSON.
-- Do NOT invent any other top-level keys.
-"""
+    system_prompt = (
+        "You are an experimental design assistant for numerical / scientific Python projects.\n"
+        "Your job is to propose a SMALL set of well-structured experiments for a coding agent.\n\n"
+        "Constraints:\n"
+        "- Focus on 1 to 3 experiments that are genuinely useful to answer the question.\n"
+        "- Each experiment should have a clear goal and a concise description.\n"
+        "- For each experiment, specify one or more PNG plots to generate using matplotlib.\n"
+        "- Use simple snake_case filenames ending in .png (e.g., 'displacement_vs_time.png').\n"
+        "- Do NOT include any 'metrics' array or variable names; only describe plots.\n"
+        "- Do NOT include any commentary outside the JSON object.\n\n"
+        + schema_description
+        + "\n"
+        f"When designing experiments, think in terms of what code a Python script can do: "
+        f"simulate, sweep parameters, and produce plots.\n"
+    )
 
     user_prompt = (
-        "Research question:\n"
-        "------------------\n"
+        "QUESTION:\n"
         f"{question}\n\n"
-        "Design a small, coherent set of experiments that, if implemented in Python,\n"
-        "would answer this question. Use only JSON in your reply, following the\n"
-        "schema described in the system message."
+        "Design experiments that would help solve or illustrate this question.\n"
+        "Remember: respond with ONLY a single JSON object matching the schema described.\n"
     )
 
-    client = _get_client()
-    resp = client.chat.completions.create(
+    raw = call_llm(
         model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        temperature=0.2,
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
     )
 
-    raw = resp.choices[0].message.content or ""
-    parsed = _extract_json_object(raw)
+    parsed = _safe_parse_json_object(raw)
+    experiments: List[Dict[str, Any]] = []
 
-    experiments = parsed.get("experiments") or []
-    if not isinstance(experiments, list):
-        experiments = []
+    raw_exps = parsed.get("experiments", [])
+    if isinstance(raw_exps, list):
+        for idx, exp in enumerate(raw_exps):
+            if not isinstance(exp, dict):
+                continue
+            # Ensure minimal keys are present
+            exp_id = exp.get("id") or f"exp{idx + 1}"
+            name = exp.get("name") or f"Experiment {idx + 1}"
+            goal = exp.get("goal") or ""
+            description = exp.get("description") or ""
+            outputs = exp.get("outputs") or {}
+            plots = outputs.get("plots") or []
 
-    # Clip to max_experiments if the model produced more
-    if len(experiments) > max_experiments:
+            # Normalize plots to list[dict]
+            norm_plots: List[Dict[str, Any]] = []
+            if isinstance(plots, list):
+                for p in plots:
+                    if not isinstance(p, dict):
+                        continue
+                    fn = p.get("filename")
+                    desc = p.get("description") or ""
+                    if not fn or not isinstance(fn, str):
+                        continue
+                    norm_plots.append(
+                        {
+                            "filename": fn,
+                            "description": desc,
+                        }
+                    )
+
+            experiments.append(
+                {
+                    "id": exp_id,
+                    "name": name,
+                    "goal": goal,
+                    "description": description,
+                    "outputs": {
+                        "plots": norm_plots,
+                        # No metrics field on purpose; the validator will then
+                        # have nothing metric-specific to enforce.
+                    },
+                }
+            )
+
+    # Clip to max_experiments
+    if max_experiments is not None and max_experiments > 0:
         experiments = experiments[:max_experiments]
 
     return {"experiments": experiments}

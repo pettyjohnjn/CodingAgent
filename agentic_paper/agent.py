@@ -465,8 +465,7 @@ def solve_question_with_agent(
 if __name__ == "__main__":
     cfg = AgentConfig(base_dir="experiments", max_retries=0)
     q = (
-        "Numerically approximate the definite integral of sin(x) "
-        "from 0 to pi and report the result."
+        "Simulate a damped harmonic oscillator"
     )
     result = solve_question_with_agent(q, config=cfg)
 
