@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environments
+venv/
+.env/
+
+# Experiment outputs
+experiments/
+*.png
+*.pdf
+
+# Logs
+*.log
+
+# OS-specific
+.DS_Store
+
+# API key
+agentic_paper/utils/inference_auth_token.py
