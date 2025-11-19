@@ -191,6 +191,11 @@ def generate_project_code(
         "Constraints:\n"
         "- Every key in code_by_file MUST be one of the filenames in project_plan['files'].\n"
         "- Each value in code_by_file MUST be the full, standalone Python code for that file.\n"
+        "- Every value in code_by_file MUST also be a valid JSON string: escape newlines as \\n\n"
+        "  and quotes as \\\". Do NOT insert raw unescaped newlines inside the string.\n"
+        "- For a file named 'environment.yaml', write a valid conda environment file\n"
+        "  with pinned Python version and the dependencies required by the project code,\n"
+        "  but still encode it as a single JSON string with \\n for line breaks.\n"
         "- Do NOT include any natural-language commentary.\n"
         "- You MAY wrap the JSON in ```json fences; this will be stripped.\n"
     )
@@ -205,6 +210,15 @@ def generate_project_code(
         "given in project_plan['experiments'][*]['outputs']['plots'][*]['filename'].\n"
         "Ensure the entrypoint script prints the final numeric answer with:\n"
         "    print('Answer:', value)\n\n"
+        "If 'environment.yaml' is one of the files, define a conda-style environment like:\n"
+        "  name: agentic-paper\n"
+        "  channels:\n"
+        "    - conda-forge\n"
+        "  dependencies:\n"
+        "    - python=3.11\n"
+        "    - numpy\n"
+        "    - matplotlib\n"
+        "and include any other libraries you actually import in the project code.\n\n"
         "Respond ONLY with the JSON object described above."
     )
 
@@ -215,8 +229,9 @@ def generate_project_code(
         ],
         model=model_name,
     )
-
+    
     parsed = _extract_json_object(raw)
+
     code_by_file = parsed.get("code_by_file") or {}
 
     # Normalize to Dict[str, str]
@@ -224,4 +239,5 @@ def generate_project_code(
     for k, v in code_by_file.items():
         norm[str(k)] = str(v)
 
+    # returns dict with main.py and environment.yaml
     return norm

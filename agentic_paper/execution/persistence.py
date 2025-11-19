@@ -118,11 +118,15 @@ def save_experiment_artifacts(
     # Figures
     for png in root.glob("*.png"):
         dest = figures_dir / png.name
+        print("dest: ", dest)
         try:
             shutil.move(str(png), dest)
         except Exception:
             # If something goes wrong, leave the file where it is.
+            print("figure could not be moved!!!")
             pass
+
+    print("figures_dir: ", figures_dir)
 
     return {
         "root": str(root),

@@ -9,6 +9,8 @@ class AgentConfig:
 
     base_dir: str = "experiments"
     max_retries: int = 2  # number of fix attempts after the initial one
+    use_isolated_env: bool = True
+    env_tool: str = "conda"
 
     # Security / safety
     forbidden_modules: List[str] = field(

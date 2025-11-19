@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import re
 from typing import Dict, Any, List, Optional
+from pathlib import Path
 
 from .config import AgentConfig
 from .planning.project_planner import plan_project
@@ -50,6 +51,9 @@ def _combine_project_code(
     parts: List[str] = []
     for file_spec in project_plan.get("files", []):
         name = file_spec["name"]
+        role = file_spec.get("role")
+        if role == "env":
+            continue  # skip environment.yaml
         code = code_by_file.get(name, "")
         parts.append(f"# ==== {name} ====")
         parts.append(code)
@@ -274,12 +278,22 @@ def solve_question_with_agent(
             )
             validation_issues_by_file.setdefault(target_file, []).append(msg)
 
+        # Write environment.yaml file to be used when running code
+        root_dir = experiment_dirs["root_dir"]
+        env_code = code_by_file.get("environment.yaml")
+        if env_code:
+            env_path = Path(root_dir) / "environment.yaml"
+            env_path.write_text(env_code, encoding="utf-8")
+
         # Execute if validation passed
         if all_valid:
             combined_code = combined_code_for_validation
             final_run_result = run_generated_code(
                 combined_code,
                 work_dir=experiment_dirs["root_dir"],
+                entrypoint_name=entrypoint_name or "main.py",
+                env_tool="conda",
+                use_isolated_env=True,
             )
         else:
             combined_code = combined_code_for_validation

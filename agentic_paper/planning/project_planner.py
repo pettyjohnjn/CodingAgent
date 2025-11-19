@@ -102,6 +102,16 @@ def plan_project(question: str, config: AgentConfig) -> Dict[str, Any]:
                 "one script."
             ),
         },
+        {
+            "name": "environment.yaml",
+            "role": "env",
+            "description": (
+                "Conda environment specification required to run main.py. "
+                "Use a valid YAML conda env format with a name, channels, and "
+                "dependencies. Include a pinned Python version and only the libraries "
+                "that are actually imported in main.py (e.g., numpy, matplotlib, etc.)."
+            ),
+        },
     ]
 
     project_plan: Dict[str, Any] = {
