@@ -4,6 +4,7 @@ retry logic, execution, explanation, and paper generation.
 
 from __future__ import annotations
 
+import json
 import re
 from typing import Dict, Any, List, Optional
 from pathlib import Path
@@ -16,6 +17,10 @@ from .execution.explainer import generate_explanation
 from .execution.persistence import (
     create_experiment_dirs,
     save_experiment_artifacts,
+)
+from .execution.github_publisher import (
+    create_repo,
+    upload_run_artifacts,
 )
 from .validation.validator import validate_code
 from .codegen.code_editor import revise_code
@@ -147,6 +152,20 @@ def _entrypoint_generates_required_plots(
         if fn not in combined_code:
             missing.append(fn)
     return missing
+
+
+def _append_repo_note(section_md: str, repo_url: Optional[str]) -> str:
+    """Append a short code-availability sentence if a repo URL is available."""
+    if not repo_url:
+        return section_md
+    note = (
+        "Code availability: The generated code, experiment scripts, and paper "
+        f"sources are available at {repo_url}."
+    )
+    if note in section_md:
+        return section_md
+    section_md = section_md.rstrip() + "\n\n" + note + "\n"
+    return section_md
 
 
 # Main agent API
@@ -397,6 +416,26 @@ def solve_question_with_agent(
         critic_report=critic_report,
     )
 
+    github_repo_info: Optional[Dict[str, Any]] = None
+    github_upload_info: Optional[Dict[str, Any]] = None
+    repo_url_for_text: Optional[str] = None
+
+    if getattr(config, "enable_github_publish", False) and final_run_result.get("success"):
+        try:
+            github_repo_info = create_repo(
+                question=question,
+                token=getattr(config, "github_token", None),
+                visibility=getattr(config, "github_visibility", "private"),
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            github_repo_info = {"created": False, "error": str(exc)}
+
+        if github_repo_info.get("created") and github_repo_info.get("repo"):
+            repo_url_for_text = github_repo_info["repo"].get("html_url")
+
+    results_text = _append_repo_note(results_text, repo_url_for_text)
+    discussion_text = _append_repo_note(discussion_text, repo_url_for_text)
+
     # BibTeX references
     references_bib = generate_references_bib(
         question=question,
@@ -417,6 +456,7 @@ def solve_question_with_agent(
         discussion_md=discussion_text,
         project_plan=project_plan,
         references_bib=references_bib,
+        repo_url=repo_url_for_text,
     )
 
     if paper_tex and getattr(config, "enable_paper_polish", False):
@@ -451,7 +491,34 @@ def solve_question_with_agent(
         references_bib=references_bib,
         attempts_meta=attempts_meta,
         related_work_text=related_work_text,
+        repo_info=github_repo_info,
     )
+
+    if (
+        github_repo_info
+        and github_repo_info.get("created")
+        and github_repo_info.get("repo")
+        and github_repo_info["repo"].get("full_name")
+    ):
+        repo_full_name = github_repo_info["repo"]["full_name"]
+        branch = github_repo_info["repo"].get("default_branch", "main")
+        github_upload_info = upload_run_artifacts(
+            repo_full_name=repo_full_name,
+            source_dir=experiment_dirs["root_dir"],
+            token=getattr(config, "github_token", None),
+            branch=branch,
+            ignore_patterns=getattr(config, "github_ignore_patterns", None),
+        )
+        github_repo_info["upload"] = github_upload_info
+        try:
+            state_path = Path(paths["state_json"])
+            state_data = json.loads(state_path.read_text(encoding="utf-8"))
+            state_data["repo"] = github_repo_info
+            state_path.write_text(json.dumps(state_data, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+        if github_repo_info["repo"].get("html_url"):
+            paths["repo_url"] = github_repo_info["repo"]["html_url"]
 
     return {
         "question": question,
@@ -473,6 +540,7 @@ def solve_question_with_agent(
         "paper_tex": paper_tex,
         "references_bib": references_bib,
         "paths": paths,
+        "repo_info": github_repo_info,
     }
 
 

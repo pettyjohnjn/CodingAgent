@@ -187,6 +187,7 @@ def assemble_acm_paper_tex(
     discussion_md: str,
     project_plan: Dict[str, Any] | None = None,
     references_bib: str | None = None,
+    repo_url: str | None = None,
 ) -> str:
     """
     Assemble a full ACM-style LaTeX source using acmart, sigconf style.
@@ -240,6 +241,14 @@ def assemble_acm_paper_tex(
     # Build figure environments from experiment plots
     figures_tex = _build_figures_latex(project_plan or {})
 
+    availability_tex = ""
+    if repo_url:
+        safe_repo_url = sanitize_for_latex(repo_url)
+        availability_tex = (
+            "\n\\section{Code Availability}\n"
+            f"The full generated code, experiment scripts, and paper sources are available at \\url{{{safe_repo_url}}}.\n"
+        )
+
     # Optional related-work section
     related_section_tex = ""
     if related_body_tex:
@@ -288,6 +297,8 @@ def assemble_acm_paper_tex(
 
 \\section{{Discussion and Conclusion}}
 {discussion_body_tex}
+
+{availability_tex}
 
 \\bibliographystyle{{ACM-Reference-Format}}
 \\bibliography{{references}}

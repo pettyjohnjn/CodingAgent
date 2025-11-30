@@ -75,6 +75,7 @@ def save_experiment_artifacts(
     references_bib: str,
     attempts_meta: List[Dict[str, Any]],
     related_work_text: str,
+    repo_info: Dict[str, Any] | None = None,
 ) -> Dict[str, str]:
     """
     Persist all artifacts into the per-run directory.
@@ -112,6 +113,8 @@ def save_experiment_artifacts(
         "critic_report": critic_report,
         "attempts": attempts_meta,
     }
+    if repo_info is not None:
+        meta["repo"] = repo_info
     state_path = root / "state.json"
     state_path.write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
@@ -137,4 +140,5 @@ def save_experiment_artifacts(
         "state_json": str(state_path),
         "paper_tex": str(paper_dir / "paper.tex"),
         "references_bib": str(paper_dir / "references.bib"),
+        "repo_url": (repo_info or {}).get("repo", {}).get("html_url") if repo_info else None,
     }
