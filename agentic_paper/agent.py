@@ -47,6 +47,8 @@ _FUNC_PATTERN = re.compile(
     re.MULTILINE,
 )
 
+no_code_saved_error = AgentConfig.no_code_saved
+
 
 def _combine_project_code(
     project_plan: Dict[str, Any],
@@ -298,11 +300,12 @@ def solve_question_with_agent(
             validation_issues_by_file.setdefault(target_file, []).append(msg)
 
         # Write environment.yaml file to be used when running code
-        root_dir = experiment_dirs["root_dir"]
-        env_code = code_by_file.get("environment.yaml")
-        if env_code:
-            env_path = Path(root_dir) / "environment.yaml"
-            env_path.write_text(env_code, encoding="utf-8")
+        if not no_code_saved_error: 
+            root_dir = experiment_dirs["root_dir"]
+            env_code = code_by_file.get("environment.yaml")
+            if env_code:
+                env_path = Path(root_dir) / "environment.yaml"
+                env_path.write_text(env_code, encoding="utf-8")
 
         # Execute if validation passed
         if all_valid:

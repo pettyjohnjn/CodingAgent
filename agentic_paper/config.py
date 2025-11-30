@@ -48,3 +48,10 @@ class AgentConfig:
     critic_model: str = "openai/gpt-oss-120b"
     writer_model: str = "openai/gpt-oss-120b"
     editor_model: str = "openai/gpt-oss-120b"
+
+    #Reproduce Errors
+
+    #No code/computational artifacts available by the author 
+    no_code_saved: bool = False
+    #Code repository exists and is accessible, but may not include the necessary instructions or environment details.
+    no_env_saved: bool = True

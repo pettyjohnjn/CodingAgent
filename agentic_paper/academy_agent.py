@@ -425,10 +425,12 @@ async def _run_orchestration(question: str, config: AgentConfig) -> Dict[str, An
             combined_code_for_validation = _combine_project_code(project_plan, code_by_file)
 
             # Ensure environment.yaml is written for the runner
-            env_code = code_by_file.get("environment.yaml")
-            if env_code:
-                env_path = Path(experiment_dirs["root_dir"]) / "environment.yaml"
-                env_path.write_text(env_code, encoding="utf-8")
+            no_env_error = AgentConfig.no_env_saved
+            if not no_env_error:
+                env_code = code_by_file.get("environment.yaml")
+                if env_code:
+                    env_path = Path(experiment_dirs["root_dir"]) / "environment.yaml"
+                    env_path.write_text(env_code, encoding="utf-8")
 
             validation_result = await validation_handle.validate(
                 project_plan=project_plan,
@@ -438,7 +440,7 @@ async def _run_orchestration(question: str, config: AgentConfig) -> Dict[str, An
             all_valid = bool(validation_result.get("all_valid", False))
             validation_issues_by_file = validation_result.get("issues_by_file", {}) or {}
 
-            if all_valid:
+            if all_valid and not no_env_error:
                 final_run_result = await execution_handle.run(
                     combined_code=combined_code_for_validation,
                     work_dir=experiment_dirs["root_dir"],
