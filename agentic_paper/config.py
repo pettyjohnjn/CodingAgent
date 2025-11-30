@@ -39,12 +39,12 @@ class AgentConfig:
     github_token: Optional[str] = None
     github_ignore_patterns: List[str] = field(default_factory=list)
 
-    planner_model: str = "meta-llama/Llama-4-Maverick-17B-128E-Instruct"
-    coder_model: str = "meta-llama/Llama-4-Maverick-17B-128E-Instruct"
-    critic_model: str = "meta-llama/Llama-4-Maverick-17B-128E-Instruct"
+    # planner_model: str = "meta-llama/Llama-4-Maverick-17B-128E-Instruct"
+    # coder_model: str = "meta-llama/Llama-4-Maverick-17B-128E-Instruct"
+    # critic_model: str = "meta-llama/Llama-4-Maverick-17B-128E-Instruct"
 
-    # planner_model: str = "openai/gpt-oss-120b"
-    # coder_model: str = "openai/gpt-oss-120b"
-    # critic_model: str = "openai/gpt-oss-120b"
+    planner_model: str = "openai/gpt-oss-120b"
+    coder_model: str = "openai/gpt-oss-120b"
+    critic_model: str = "openai/gpt-oss-120b"
     writer_model: str = "openai/gpt-oss-120b"
     editor_model: str = "openai/gpt-oss-120b"
