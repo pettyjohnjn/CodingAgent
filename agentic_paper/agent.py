@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import re
+import random
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
@@ -46,6 +47,9 @@ _FUNC_PATTERN = re.compile(
     r"^\s*def\s+([A-Za-z_][A-Za-z0-9_]*)\s*\(",
     re.MULTILINE,
 )
+
+no_code_saved_error = AgentConfig.no_code_saved
+incorrect_paper_content_error = AgentConfig.incorrect_paper_content
 
 
 def _combine_project_code(
@@ -298,11 +302,12 @@ def solve_question_with_agent(
             validation_issues_by_file.setdefault(target_file, []).append(msg)
 
         # Write environment.yaml file to be used when running code
-        root_dir = experiment_dirs["root_dir"]
-        env_code = code_by_file.get("environment.yaml")
-        if env_code:
-            env_path = Path(root_dir) / "environment.yaml"
-            env_path.write_text(env_code, encoding="utf-8")
+        if not no_code_saved_error: 
+            root_dir = experiment_dirs["root_dir"]
+            env_code = code_by_file.get("environment.yaml")
+            if env_code:
+                env_path = Path(root_dir) / "environment.yaml"
+                env_path.write_text(env_code, encoding="utf-8")
 
         # Execute if validation passed
         if all_valid:
@@ -420,7 +425,7 @@ def solve_question_with_agent(
     github_upload_info: Optional[Dict[str, Any]] = None
     repo_url_for_text: Optional[str] = None
 
-    if getattr(config, "enable_github_publish", False) and final_run_result.get("success"):
+    if not no_code_saved_error and getattr(config, "enable_github_publish", False) and final_run_result.get("success"):
         try:
             github_repo_info = create_repo(
                 question=question,
@@ -446,6 +451,12 @@ def solve_question_with_agent(
     )
 
     # Assemble ACM-style LaTeX paper
+    if AgentConfig.incorrect_paper_content:
+        words = methods_text.split()
+        print(words)
+        random.shuffle(words)
+        methods_text = " ".join(words)
+
     paper_tex = assemble_acm_paper_tex(
         question=question,
         intro_md=introduction_text,

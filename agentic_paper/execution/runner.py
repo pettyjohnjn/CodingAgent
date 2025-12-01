@@ -6,8 +6,10 @@ import traceback
 from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Dict, Any, Optional
+from agentic_paper.config import AgentConfig
 import subprocess
 
+no_code_saved_error = AgentConfig.no_code_saved
 
 def run_generated_code(code: str, 
                        work_dir: str, 
@@ -42,8 +44,10 @@ def run_generated_code(code: str,
 
     # write the combined code to a file and locate environment.yaml file
     entrypoint_path = work_path / entrypoint_name
-    with entrypoint_path.open("w", encoding="utf-8") as f:
-        f.write(code)
+
+    if not no_code_saved_error:
+        with entrypoint_path.open("w", encoding="utf-8") as f:
+            f.write(code)
 
     env_yaml_path = work_path / "environment.yaml"
     if env_prefix is None:

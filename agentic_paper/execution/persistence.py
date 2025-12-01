@@ -6,9 +6,13 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List
+from agentic_paper.config import AgentConfig
 
 _SLUG_RE = re.compile(r"[^a-zA-Z0-9]+")
-
+no_code_saved_error = AgentConfig.no_code_saved
+no_env_saved_error = AgentConfig.no_env_saved
+error_in_code = AgentConfig.errors_in_code
+absent_references_error = AgentConfig.absent_references
 
 def _slugify(text: str, max_len: int = 60) -> str:
     text = text.strip().lower()
@@ -39,21 +43,30 @@ def create_experiment_dirs(base_dir: str, question: str) -> Dict[str, str]:
     slug = _slugify(question)
 
     root = base / f"{ts}_{slug}"
-    code_dir = root / "code"
     paper_dir = root / "paper"
     markdown_dir = root / "markdown"
     figures_dir = root / "figures"
 
-    for d in (root, code_dir, paper_dir, markdown_dir, figures_dir):
+    for d in (root, paper_dir, markdown_dir, figures_dir):
         d.mkdir(parents=True, exist_ok=True)
 
-    return {
+    if not no_code_saved_error:
+        code_dir = root / "code"
+        code_dir.mkdir(parents=True, exist_ok=True)
+        return {
         "root_dir": str(root),
         "code_dir": str(code_dir),
         "paper_dir": str(paper_dir),
         "markdown_dir": str(markdown_dir),
         "figures_dir": str(figures_dir),
-    }
+        }
+    else: 
+        return {
+        "root_dir": str(root),
+        "paper_dir": str(paper_dir),
+        "markdown_dir": str(markdown_dir),
+        "figures_dir": str(figures_dir),
+        }
 
 
 def save_experiment_artifacts(
@@ -81,15 +94,9 @@ def save_experiment_artifacts(
     Persist all artifacts into the per-run directory.
     """
     root = Path(experiment_dirs["root_dir"])
-    code_dir = Path(experiment_dirs["code_dir"])
     paper_dir = Path(experiment_dirs["paper_dir"])
     markdown_dir = Path(experiment_dirs["markdown_dir"])
     figures_dir = Path(experiment_dirs["figures_dir"])
-
-    # Code
-    for name, code in code_by_file.items():
-        (code_dir / name).write_text(code, encoding="utf-8")
-    (code_dir / "combined_code.py").write_text(combined_code, encoding="utf-8")
 
     # Markdown sections
     (markdown_dir / "introduction.md").write_text(introduction_text, encoding="utf-8")
@@ -102,7 +109,9 @@ def save_experiment_artifacts(
 
     # LaTeX + BibTeX 
     (paper_dir / "paper.tex").write_text(paper_tex, encoding="utf-8")
-    (paper_dir / "references.bib").write_text(references_bib, encoding="utf-8")
+
+    if not absent_references_error:
+        (paper_dir / "references.bib").write_text(references_bib, encoding="utf-8")
 
     # Metadata / state log 
     meta = {
@@ -131,9 +140,8 @@ def save_experiment_artifacts(
 
     print("figures_dir: ", figures_dir)
 
-    return {
+    result = {
         "root": str(root),
-        "code_dir": str(code_dir),
         "paper_dir": str(paper_dir),
         "markdown_dir": str(markdown_dir),
         "figures_dir": str(figures_dir),
@@ -141,4 +149,29 @@ def save_experiment_artifacts(
         "paper_tex": str(paper_dir / "paper.tex"),
         "references_bib": str(paper_dir / "references.bib"),
         "repo_url": (repo_info or {}).get("repo", {}).get("html_url") if repo_info else None,
-    }
+        }
+
+    # Code
+    if not no_code_saved_error:
+        code_dir = Path(experiment_dirs["code_dir"])
+        for name, code in code_by_file.items():
+
+            if name == "environment.yaml" and no_env_saved_error: 
+                continue
+
+            if error_in_code: 
+                lines = code.splitlines()
+                code = "\n".join(lines[:-10]) if len(lines) > 10 else ""
+
+            (code_dir / name).write_text(code, encoding="utf-8")
+
+        if error_in_code: 
+            lines = combined_code.splitlines()
+            combined_code = "\n".join(lines[:-10]) if len(lines) > 10 else ""
+
+
+        (code_dir / "combined_code.py").write_text(combined_code, encoding="utf-8")
+
+        result["code_dir"] = str(code_dir)
+
+    return result

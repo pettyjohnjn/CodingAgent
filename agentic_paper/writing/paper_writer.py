@@ -14,6 +14,7 @@ from typing import Dict, Any, List
 
 from ..utils.llm_client import call_llm
 from ..utils.latex_sanitizer import sanitize_for_latex, markdown_to_latex_body
+from ..config import AgentConfig
 
 
 def strip_markdown_heading(md: str, expected_prefix: str) -> str:
@@ -242,7 +243,7 @@ def assemble_acm_paper_tex(
     figures_tex = _build_figures_latex(project_plan or {})
 
     availability_tex = ""
-    if repo_url:
+    if repo_url and not AgentConfig.no_code_saved:
         safe_repo_url = sanitize_for_latex(repo_url)
         availability_tex = (
             "\n\\section{Code Availability}\n"
