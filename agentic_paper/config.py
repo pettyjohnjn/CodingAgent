@@ -59,3 +59,7 @@ class AgentConfig:
 
     #Faulty code 
     errors_in_code: bool = True
+
+    #No references 
+    absent_references: bool = True
+    

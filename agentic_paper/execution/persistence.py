@@ -12,6 +12,7 @@ _SLUG_RE = re.compile(r"[^a-zA-Z0-9]+")
 no_code_saved_error = AgentConfig.no_code_saved
 no_env_saved_error = AgentConfig.no_env_saved
 error_in_code = AgentConfig.errors_in_code
+absent_references_error = AgentConfig.absent_references
 
 def _slugify(text: str, max_len: int = 60) -> str:
     text = text.strip().lower()
@@ -108,7 +109,9 @@ def save_experiment_artifacts(
 
     # LaTeX + BibTeX 
     (paper_dir / "paper.tex").write_text(paper_tex, encoding="utf-8")
-    (paper_dir / "references.bib").write_text(references_bib, encoding="utf-8")
+
+    if not absent_references_error:
+        (paper_dir / "references.bib").write_text(references_bib, encoding="utf-8")
 
     # Metadata / state log 
     meta = {
