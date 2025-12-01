@@ -61,5 +61,8 @@ class AgentConfig:
     errors_in_code: bool = True
 
     #No references 
-    absent_references: bool = True
+    absent_references: bool = False
+
+    #Error in paper content
+    incorrect_paper_content: bool = False
 

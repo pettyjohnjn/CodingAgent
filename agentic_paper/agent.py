@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import re
+import random
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
@@ -48,6 +49,7 @@ _FUNC_PATTERN = re.compile(
 )
 
 no_code_saved_error = AgentConfig.no_code_saved
+incorrect_paper_content_error = AgentConfig.incorrect_paper_content
 
 
 def _combine_project_code(
@@ -449,6 +451,12 @@ def solve_question_with_agent(
     )
 
     # Assemble ACM-style LaTeX paper
+    if AgentConfig.incorrect_paper_content:
+        words = methods_text.split()
+        print(words)
+        random.shuffle(words)
+        methods_text = " ".join(words)
+
     paper_tex = assemble_acm_paper_tex(
         question=question,
         intro_md=introduction_text,
