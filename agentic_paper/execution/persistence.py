@@ -158,8 +158,6 @@ def save_experiment_artifacts(
 
             if name == "environment.yaml" and no_env_saved_error: 
                 continue
-            print(code)
-            print(combined_code)
 
             if error_in_code: 
                 lines = code.splitlines()

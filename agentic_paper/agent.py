@@ -423,7 +423,7 @@ def solve_question_with_agent(
     github_upload_info: Optional[Dict[str, Any]] = None
     repo_url_for_text: Optional[str] = None
 
-    if getattr(config, "enable_github_publish", False) and final_run_result.get("success"):
+    if not no_code_saved_error and getattr(config, "enable_github_publish", False) and final_run_result.get("success"):
         try:
             github_repo_info = create_repo(
                 question=question,
