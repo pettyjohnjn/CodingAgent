@@ -11,6 +11,7 @@ from agentic_paper.config import AgentConfig
 _SLUG_RE = re.compile(r"[^a-zA-Z0-9]+")
 no_code_saved_error = AgentConfig.no_code_saved
 no_env_saved_error = AgentConfig.no_env_saved
+error_in_code = AgentConfig.errors_in_code
 
 def _slugify(text: str, max_len: int = 60) -> str:
     text = text.strip().lower()
@@ -151,9 +152,25 @@ def save_experiment_artifacts(
     if not no_code_saved_error:
         code_dir = Path(experiment_dirs["code_dir"])
         for name, code in code_by_file.items():
-            if name =="environment.yaml" and no_env_saved_error: 
+
+            if name == "environment.yaml" and no_env_saved_error: 
                 continue
+            print(code)
+            print(combined_code)
+
+            if error_in_code: 
+                lines = code.splitlines()
+                code = "\n".join(lines[:-10]) if len(lines) > 10 else ""
+
             (code_dir / name).write_text(code, encoding="utf-8")
+
+        if error_in_code: 
+            lines = combined_code.splitlines()
+            combined_code = "\n".join(lines[:-10]) if len(lines) > 10 else ""
+
+
         (code_dir / "combined_code.py").write_text(combined_code, encoding="utf-8")
+
         result["code_dir"] = str(code_dir)
+
     return result

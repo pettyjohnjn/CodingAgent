@@ -53,5 +53,9 @@ class AgentConfig:
 
     #No code/computational artifacts available by the author 
     no_code_saved: bool = False
+
     #Code repository exists and is accessible, but may not include the necessary instructions or environment details.
-    no_env_saved: bool = True
+    no_env_saved: bool = False
+
+    #Faulty code 
+    errors_in_code: bool = True
