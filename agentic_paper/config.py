@@ -57,12 +57,12 @@ class AgentConfig:
     #Code repository exists and is accessible, but may not include the necessary instructions or environment details.
     no_env_saved: bool = False
 
-    #Faulty code 
+    #Code does not compile
     errors_in_code: bool = True
 
-    #No references 
-    absent_references: bool = False
+    #Environment available but cannot build
+    error_in_env: bool = True
 
-    #Error in paper content
-    incorrect_paper_content: bool = False
+    #Results don't match the paper 
+    inconsistent_results: bool = True
 

@@ -7,9 +7,11 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from typing import Dict, Any, Optional
 from agentic_paper.config import AgentConfig
+from agentic_paper.codegen.codegen import generate_broken_project_code
 import subprocess
 
 no_code_saved_error = AgentConfig.no_code_saved
+error_in_code = AgentConfig.errors_in_code
 
 def run_generated_code(code: str, 
                        work_dir: str, 
@@ -46,6 +48,8 @@ def run_generated_code(code: str,
     entrypoint_path = work_path / entrypoint_name
 
     if not no_code_saved_error:
+        if error_in_code: 
+            code =  generate_broken_project_code(AgentConfig(),code)
         with entrypoint_path.open("w", encoding="utf-8") as f:
             f.write(code)
 

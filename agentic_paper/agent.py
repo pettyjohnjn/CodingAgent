@@ -49,7 +49,6 @@ _FUNC_PATTERN = re.compile(
 )
 
 no_code_saved_error = AgentConfig.no_code_saved
-incorrect_paper_content_error = AgentConfig.incorrect_paper_content
 
 
 def _combine_project_code(
