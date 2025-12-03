@@ -35,7 +35,7 @@ from .agent import (
     _entrypoint_uses_helpers,
     _get_helper_function_names,
 )
-from .codegen.codegen import generate_project_code
+from .codegen.codegen import generate_project_code, generate_incorrect_env
 from .codegen.code_editor import revise_code
 from .config import AgentConfig
 from .execution.answer_parser import parse_answer_from_stdout
@@ -426,9 +426,12 @@ async def _run_orchestration(question: str, config: AgentConfig) -> Dict[str, An
 
             # Ensure environment.yaml is written for the runner
             no_env_error = AgentConfig.no_env_saved
+            error_in_env = AgentConfig.error_in_env
             if not no_env_error:
                 env_code = code_by_file.get("environment.yaml")
                 if env_code:
+                    if error_in_env:
+                        env_code = generate_incorrect_env(AgentConfig(),env_code)
                     env_path = Path(experiment_dirs["root_dir"]) / "environment.yaml"
                     env_path.write_text(env_code, encoding="utf-8")
 

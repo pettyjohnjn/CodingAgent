@@ -152,6 +152,112 @@ def _extract_json_object(text: str) -> Dict[str, Any]:
     # manual fallback for the common single-file case
     return _manual_single_file_parse(cleaned)
 
+def generate_broken_project_code(config: Any, CodeFile: str) -> str:
+    """
+    Call the coder model once and ask it to emit a JSON object of the form:
+
+        {
+          "entrypoint": "main.py",
+          "code_by_file": {
+            "main.py": "<complete python script>",
+            "...": "..."
+          }
+        }
+
+    The function returns only the `code_by_file` mapping.
+    Your updated agent.py already normalizes this into the shape it needs.
+    """
+    # Choose a model name from the AgentConfig, with fallbacks
+    model_name = getattr(config, "coder_model", None) or getattr(
+        config, "llm_model", "openai/gpt-oss-120b"
+    )
+    system_prompt = (
+        "You are a precise Python code transformer.\n\n"
+        "Your job is to take Python code provided by the user and insert realistic errors.\n"
+        "These errors may include (but are not limited to):\n"
+        "- logic errors\n"
+        "- incorrect variable names\n"
+        "- broken control flow\n"
+        "- missing imports\n"
+        "- invalid assumptions\n\n"
+        "Rules:\n"
+        "- Return ONLY the modified Python code as a single string.\n"
+        "- Do NOT wrap it in JSON.\n"
+        "- Do NOT explain the changes.\n"
+        "- Do NOT include commentary.\n"
+        "- Preserve overall structure but introduce subtle or overt errors.\n"
+    )
+
+    user_prompt = (
+        "Insert realistic errors into the following Python script and return ONLY the modified script:\n\n"
+        f"{CodeFile}"
+    )
+
+    raw = call_llm(
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        model=model_name,
+    )
+    return raw
+
+# def generate_irrelevant_code(config: Any, CodeFile: str) -> str:
+
+
+def generate_incorrect_env(config: Any, env_file: str) -> str: 
+    """
+    Call the coder model once and ask it to emit a JSON object of the form:
+
+        {
+          "entrypoint": "main.py",
+          "code_by_file": {
+            "main.py": "<complete python script>",
+            "...": "..."
+          }
+        }
+
+    The function returns only the `code_by_file` mapping.
+    Your updated agent.py already normalizes this into the shape it needs.
+    """
+    # Choose a model name from the AgentConfig, with fallbacks
+    model_name = getattr(config, "coder_model", None) or getattr(
+        config, "llm_model", "openai/gpt-oss-120b"
+    )
+    system_prompt = (
+        "You are a precise environment.yaml transformer.\n\n"
+        "Your job is to take a conda environment.yaml file provided by the user and insert "
+        "realistic errors.\n\n"
+        "These errors may include (but are not limited to):\n"
+        "- incorrect or missing dependency versions\n"
+        "- invalid or misspelled package names\n"
+        "- malformed YAML structure\n"
+        "- wrong indentation\n"
+        "- missing required sections\n"
+        "- impossible dependency constraints\n"
+        "- wrong channel names\n\n"
+        "Rules:\n"
+        "- Return ONLY the modified environment.yaml text as a single string.\n"
+        "- Do NOT wrap it in JSON.\n"
+        "- Do NOT explain the changes.\n"
+        "- Do NOT include commentary.\n"
+        "- Preserve the overall structure but introduce subtle or overt errors.\n"
+    )
+
+    user_prompt = (
+        "Insert realistic errors into the following conda environment.yaml specification "
+        "and return ONLY the modified environment.yaml text:\n\n"
+        f"{env_file}"
+    )
+
+    raw = call_llm(
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        model=model_name,
+    )
+    return raw
 
 def generate_project_code(
     question: str,

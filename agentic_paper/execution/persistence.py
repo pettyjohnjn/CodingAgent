@@ -7,12 +7,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List
 from agentic_paper.config import AgentConfig
+from agentic_paper.codegen.codegen import generate_broken_project_code, generate_incorrect_env
 
 _SLUG_RE = re.compile(r"[^a-zA-Z0-9]+")
 no_code_saved_error = AgentConfig.no_code_saved
 no_env_saved_error = AgentConfig.no_env_saved
 error_in_code = AgentConfig.errors_in_code
-absent_references_error = AgentConfig.absent_references
+error_in_env = AgentConfig.error_in_env
+cfg = AgentConfig(base_dir="experiments", max_retries=0)
 
 def _slugify(text: str, max_len: int = 60) -> str:
     text = text.strip().lower()
@@ -110,8 +112,7 @@ def save_experiment_artifacts(
     # LaTeX + BibTeX 
     (paper_dir / "paper.tex").write_text(paper_tex, encoding="utf-8")
 
-    if not absent_references_error:
-        (paper_dir / "references.bib").write_text(references_bib, encoding="utf-8")
+    (paper_dir / "references.bib").write_text(references_bib, encoding="utf-8")
 
     # Metadata / state log 
     meta = {
@@ -156,20 +157,20 @@ def save_experiment_artifacts(
         code_dir = Path(experiment_dirs["code_dir"])
         for name, code in code_by_file.items():
 
-            if name == "environment.yaml" and no_env_saved_error: 
-                continue
+            if name == "environment.yaml":
+                if no_env_saved_error: 
+                    continue
+                elif error_in_env:
+                    code = generate_incorrect_env(cfg,code)
+                (code_dir / name).write_text(code, encoding="utf-8")
 
             if error_in_code: 
-                lines = code.splitlines()
-                code = "\n".join(lines[:-10]) if len(lines) > 10 else ""
-
+                cfg = AgentConfig(base_dir="experiments", max_retries=0)
+                code = generate_broken_project_code(cfg,code)
             (code_dir / name).write_text(code, encoding="utf-8")
 
         if error_in_code: 
-            lines = combined_code.splitlines()
-            combined_code = "\n".join(lines[:-10]) if len(lines) > 10 else ""
-
-
+            combined_code = generate_broken_project_code(cfg,combined_code)
         (code_dir / "combined_code.py").write_text(combined_code, encoding="utf-8")
 
         result["code_dir"] = str(code_dir)
