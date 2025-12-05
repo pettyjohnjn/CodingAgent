@@ -1,0 +1,31 @@
+domain,prompt
+mathematics,Simulate a damped nonlinear pendulum equation
+mathematics,Analyze stability of fixed points in a discrete logistic map
+mathematics,Model heat diffusion using the 1D heat equation
+mathematics,Study bifurcations in a parametrized cubic map
+mathematics,Simulate numerical solutions to a stiff ODE system
+mathematics,Evaluate convergence of Fourier series approximations
+mathematics,Solve a boundary value problem for a second‑order PDE
+mathematics,Approximate eigenvalues of a tridiagonal matrix
+mathematics,Model random walks on a 2D lattice
+mathematics,Simulate wave propagation using the finite‑difference method
+physics,Simulate a damped harmonic oscillator
+physics,Model the motion of a projectile with air resistance
+physics,Simulate the trajectory of a charged particle in an electric field
+physics,Model heat conduction in a metal rod
+physics,Simulate simple pendulum motion under small-angle approximations
+physics,Model radioactive decay as a stochastic process
+physics,Simulate fluid flow using a simplified Navier–Stokes solver
+physics,Model rotational dynamics of a rigid body
+physics,Simulate photon scattering in a homogeneous medium
+physics,Model gravitational attraction between two bodies
+biomedicine,Simulate the spread of a virus using an SIR model
+biomedicine,Model enzyme kinetics using Michaelis–Menten dynamics
+biomedicine,Simulate drug concentration using a one‑compartment PK model
+biomedicine,Model population growth of bacteria under nutrient limitation
+biomedicine,Simulate gene expression with stochastic transcription bursts
+biomedicine,Model diffusion of a chemical signal across tissue
+biomedicine,Simulate firing behavior of a single neuron using Hodgkin–Huxley equations
+biomedicine,Model ligand–receptor binding dynamics
+biomedicine,Simulate tumor growth with logistic expansion
+biomedicine,Model circadian rhythm oscillations in a feedback loop

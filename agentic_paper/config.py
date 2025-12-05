@@ -58,11 +58,11 @@ class AgentConfig:
     no_env_saved: bool = False
 
     #Code does not compile
-    errors_in_code: bool = True
+    errors_in_code: bool = False
 
     #Environment available but cannot build
-    error_in_env: bool = True
+    error_in_env: bool = False
 
     #Results don't match the paper 
-    inconsistent_results: bool = True
+    inconsistent_results: bool = False
 
