@@ -202,9 +202,6 @@ def generate_broken_project_code(config: Any, CodeFile: str) -> str:
     )
     return raw
 
-# def generate_irrelevant_code(config: Any, CodeFile: str) -> str:
-
-
 def generate_incorrect_env(config: Any, env_file: str) -> str: 
     """
     Call the coder model once and ask it to emit a JSON object of the form:
