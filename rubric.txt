@@ -1,0 +1,42 @@
+Rubric for Evaluating an Agent-Generated Paper (5 Categories)
+
+1. Scientific Correctness (1–5)
+Evaluates whether the scientific content is accurate and aligns with established domain knowledge.
+Consider:
+- Are equations correct (e.g., ODE, damping ratio, eigenvalues)?
+- Are theoretical descriptions accurate?
+- Do results match expected physical/analytical behavior?
+- Are interpretations technically sound?
+
+2. Methodological Transparency & Reproducibility (1–5)
+Assesses whether a reader could reproduce the described experiment.
+Consider:
+- Are parameters clearly stated?
+- Is the experimental setup consistent with included code?
+- Do figures match the simulations?
+- Are environment/dependencies stated?
+- Is everything reproducible?
+
+3. Structure, Writing Quality, and Academic Style (1–5)
+Evaluates clarity, organization, academic tone, and readability.
+Consider:
+- Logical sectioning
+- Clarity and grammar
+- Academic style and tone
+
+4. Clear and Accurate Figures (1–5)
+Evaluates the quality, clarity, and correctness of figures.
+Consider:
+- Are figures readable and properly labeled?
+- Do they accurately represent the described results?
+- Are axes, units, and legends correct?
+- Do figures support the claims in the text?
+
+5. Fidelity to the Assigned Task/Prompt (1–5)
+Evaluates how well the paper follows the prompt and experiment plan.
+Consider:
+- Are required figures produced and described correctly?
+- Does the paper align with the actual code/outputs?
+- Does it include required answers/results?
+
+Total possible: 25 points.

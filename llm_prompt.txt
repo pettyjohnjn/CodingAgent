@@ -1,0 +1,23 @@
+You will generate a complete research-paper-style document based solely on the problem statement below. 
+You do not have access to any example paper. 
+Instead, follow the structure and norms of a standard technical research paper. 
+The writing should be clear, formal, well-structured, and logically coherent. 
+
+Problem Statement: {PROBLEM}
+
+Structure: 
+Produce a paper with the following sections (unless clearly irrelevant): 
+Title 
+Abstract 
+Introduction 
+Background / Related Work 
+Methods / Approach 
+Results / Findings 
+Discussion 
+Conclusion and Future Work 
+References 
+
+Each section must be substantive, multi-paragraph, and technical. 
+Output the final paper as a .txt file with proper section headers. 
+Do not include meta-discussion about how you wrote the paper. 
+The output should read exactly like a self-contained research paper.
