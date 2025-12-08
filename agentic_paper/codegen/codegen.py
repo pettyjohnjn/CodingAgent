@@ -202,6 +202,62 @@ def generate_broken_project_code(config: Any, CodeFile: str) -> str:
     )
     return raw
 
+def generate_inconsistent_code(config: Any, Codefile: str) -> str: 
+    """
+    Call the coder model once and ask it to emit a JSON object of the form:
+
+        {
+          "entrypoint": "main.py",
+          "code_by_file": {
+            "main.py": "<complete python script>",
+            "...": "..."
+          }
+        }
+
+    The function returns only the `code_by_file` mapping.
+    Your updated agent.py already normalizes this into the shape it needs.
+    """
+    # Choose a model name from the AgentConfig, with fallbacks
+    model_name = getattr(config, "coder_model", None) or getattr(
+        config, "llm_model", "openai/gpt-oss-120b"
+    )
+    system_prompt = (
+    "You are a precise Python code transformer.\n\n"
+    "Your job is to take Python code provided by the user and rewrite it so that it stays in the same domain "
+    "(e.g., data processing, ML, simulation, API interactions) but produces inaccurate, inconsistent, or misleading results.\n\n"
+    "You may introduce issues such as:\n"
+    "- incorrect formulas or calculations\n"
+    "- small logic mistakes\n"
+    "- wrong variable assignments\n"
+    "- subtle bugs that change outputs but do not crash the program\n"
+    "- misleading intermediate values\n"
+    "- off-by-one errors\n"
+    "- inconsistent preprocessing or state handling\n\n"
+    "Rules:\n"
+    "- Return ONLY the modified Python code as a single string.\n"
+    "- Do NOT wrap it in JSON.\n"
+    "- Do NOT explain the changes.\n"
+    "- The code must still run without syntax errors.\n"
+    "- The overall purpose/domain must remain recognizable, but results should be unreliable.\n"
+
+    )
+
+    user_prompt = (
+        "Rewrite the following Python script by generating completely different incorrect functionality. "
+        "The output must be valid Python code that compiles and runs."
+        "Return ONLY the new Python script:\n"
+        f"{Codefile}"
+    )
+
+    raw = call_llm(
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        model=model_name,
+    )
+    return raw
+
 def generate_incorrect_env(config: Any, env_file: str) -> str: 
     """
     Call the coder model once and ask it to emit a JSON object of the form:
