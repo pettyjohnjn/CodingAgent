@@ -7,13 +7,14 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, List
 from agentic_paper.config import AgentConfig
-from agentic_paper.codegen.codegen import generate_broken_project_code, generate_incorrect_env
+from agentic_paper.codegen.codegen import generate_broken_project_code, generate_incorrect_env, generate_inconsistent_code
 
 _SLUG_RE = re.compile(r"[^a-zA-Z0-9]+")
 no_code_saved_error = AgentConfig.no_code_saved
 no_env_saved_error = AgentConfig.no_env_saved
 error_in_code = AgentConfig.errors_in_code
 error_in_env = AgentConfig.error_in_env
+inconsistent_code = AgentConfig.inconsistent_results
 cfg = AgentConfig(base_dir="experiments", max_retries=0)
 
 def _slugify(text: str, max_len: int = 60) -> str:
@@ -163,14 +164,20 @@ def save_experiment_artifacts(
                 elif error_in_env:
                     code = generate_incorrect_env(cfg,code)
                 (code_dir / name).write_text(code, encoding="utf-8")
+                continue
 
             if error_in_code: 
                 cfg = AgentConfig(base_dir="experiments", max_retries=0)
                 code = generate_broken_project_code(cfg,code)
+            elif inconsistent_code: 
+                cfg = AgentConfig(base_dir="experiments", max_retries=2)
+                code = generate_inconsistent_code(cfg, code)
             (code_dir / name).write_text(code, encoding="utf-8")
 
         if error_in_code: 
             combined_code = generate_broken_project_code(cfg,combined_code)
+        elif inconsistent_code:
+            combined_code = generate_inconsistent_code(cfg, code)
         (code_dir / "combined_code.py").write_text(combined_code, encoding="utf-8")
 
         result["code_dir"] = str(code_dir)
