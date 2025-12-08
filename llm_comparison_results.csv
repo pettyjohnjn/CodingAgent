@@ -1,0 +1,16 @@
+problem_statement,domain,agentic_total_score,agentic_clarity,agentic_technical_accuracy,agentic_depth,agentic_use_of_evidence,agentic_overall_quality,llm_total_score,llm_clarity,llm_technical_accuracy,llm_depth,llm_use_of_evidence,llm_overall_quality
+simulate_a_damped_nonlinear_pendulum_equation,mathematics,25,5,5,5,5,5,14,4,4,3,1,2
+Analyze stability of fixed points in a discrete logistic map,mathematics,20,5,5,5,2,3,16,4,4,4,1,3
+Model heat diffusion using the 1D heat equation,mathematics,24,5,5,5,4,5,16,4,5,4,1,2
+Study bifurcations in a parametrized cubic map,mathematics,24,5,5,5,4,5,15,4,4,4,1,2
+simulate_numerical_solutions_to_a_stiff_ode_system,mathematics,24,5,5,5,4,5,15,4,4,4,1,2
+evaluate_convergence_of_fourier_series_approximations,mathematics,22,5,5,5,2,5,14,4,4,3,1,2
+solve_a_boundary_value_problem_for_a_second_order_pde,mathematics,24,5,5,5,4,5,14,4,4,3,1,2
+approximate_eigenvalues_of_a_tridiagonal_matrix,mathematics,24,5,5,5,4,5,14,4,4,3,1,2
+model_random_walks_on_a_2d_lattice,mathematics,25,5,5,5,5,5,14,4,4,3,1,2
+simulate_wave_propagation_using_the_finite_difference_method,mathematics,25,5,5,5,5,5,14,4,4,3,1,2
+simulate_a_damped_harmonic_oscillator,physics,25,5,5,5,5,5,14,4,4,3,1,2
+model_the_motion_of_a_projectile_with_air_resistance,physics,25,5,5,5,5,5,14,4,4,3,1,2
+simulate_the_trajectory_of_a_charged_particle_in_an_electric,physics,25,5,5,5,5,5,14,4,4,3,1,2
+model_heat_conduction_in_a_metal_rod,physics,25,5,5,5,5,5,14,4,4,3,1,2
+simulate_simple_pendulum_motion_under_small_angle_approximat,physics,25,5,5,5,5,5,14,4,4,3,1,2

@@ -156,28 +156,33 @@ def save_experiment_artifacts(
     # Code
     if not no_code_saved_error:
         code_dir = Path(experiment_dirs["code_dir"])
+        broken_cfg = None
+        inconsistent_cfg = None
         for name, code in code_by_file.items():
 
             if name == "environment.yaml":
                 if no_env_saved_error: 
                     continue
                 elif error_in_env:
-                    code = generate_incorrect_env(cfg,code)
+                    env_cfg = AgentConfig(base_dir="experiments", max_retries=0)
+                    code = generate_incorrect_env(env_cfg, code)
                 (code_dir / name).write_text(code, encoding="utf-8")
                 continue
 
             if error_in_code: 
-                cfg = AgentConfig(base_dir="experiments", max_retries=0)
-                code = generate_broken_project_code(cfg,code)
+                broken_cfg = AgentConfig(base_dir="experiments", max_retries=0)
+                code = generate_broken_project_code(broken_cfg, code)
             elif inconsistent_code: 
-                cfg = AgentConfig(base_dir="experiments", max_retries=2)
-                code = generate_inconsistent_code(cfg, code)
+                inconsistent_cfg = AgentConfig(base_dir="experiments", max_retries=2)
+                code = generate_inconsistent_code(inconsistent_cfg, code)
             (code_dir / name).write_text(code, encoding="utf-8")
 
         if error_in_code: 
-            combined_code = generate_broken_project_code(cfg,combined_code)
+            cfg_for_combined = broken_cfg or AgentConfig(base_dir="experiments", max_retries=0)
+            combined_code = generate_broken_project_code(cfg_for_combined, combined_code)
         elif inconsistent_code:
-            combined_code = generate_inconsistent_code(cfg, code)
+            cfg_for_combined = inconsistent_cfg or AgentConfig(base_dir="experiments", max_retries=2)
+            combined_code = generate_inconsistent_code(cfg_for_combined, combined_code)
         (code_dir / "combined_code.py").write_text(combined_code, encoding="utf-8")
 
         result["code_dir"] = str(code_dir)
